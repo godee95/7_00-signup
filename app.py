@@ -40,12 +40,21 @@ SECRET_KEY = 'Zoo'
 def home():
 	return render_template('index.html')
 
+@app.route('/', methods=['POST'])
+def move_to_mypage():
+	token_receive = request.cookies.get('mytoken')
+
+	try:
+		jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+		return jsonify({'result': 'success'})
+	except(jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
+		return jsonify({'result': 'fail', 'msg': '로그인을 먼저 진행해주세요!!'})
 
 @app.route('/login')
 def login():
 	return render_template('login.html')
 
-@app.route('/log_in', methods=['POST'])
+@app.route('/login', methods=['POST'])
 def log_in():
 	email_receive = request.form["email_give"]
 	password_receive = request.form["password_give"]
@@ -87,7 +96,7 @@ def log_in():
 def signup():
 	return render_template('signup.html')
 
-@app.route('/users/sign_up', methods=['POST'])
+@app.route('/sign_up', methods=['POST'])
 def save_users_info():
 	email_receive = request.form['email_give']
 	password_receive = request.form['password_give']
@@ -123,43 +132,35 @@ def save_users_info():
 
 	return jsonify({"result":"success", 'msg':'회원가입 완료!'})
 
-# @app.route('/mypage')
-# def mypage():
-# 	token_receive = request.cookies.get('mytoken')
-#
-# 	try:
-# 		jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
-# 		return render_template('mypage.html')
-# 	except(jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
-# 		return redirect(url_for("login", msg="로그인을 먼저 진행해주세요."))
+@app.route('/mypage')
+def mypage():
+	return render_template('mypage.html')
 
-# @app.route('/mypage/user', methods=['GET'])
-# def mypage_info():
-# 	token_receive = request.cookies.get('mytoken')
-#
-# 	try:
-# 		payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
-#
-# 		db = pymysql.connect(host='localhost', user='root', db='flask_test', password='12345678', charset='utf8')
-# 		curs = db.cursor()
-#
-# 		sql = """
-# 			SELECT *
-# 			FROM users u
-# 			WHERE u.email = %s
-# 			"""
-#
-# 		curs.execute(sql, payload["id"])
-#
-# 		users_result = curs.fetchall()
-# 		# print(users_result[0][1] != password_receive)
-#
-# 		json_str = json.dumps(users_result, indent=4, sort_keys=True, default=str)
-# 		db.commit()
-# 		db.close()
-# 		return jsonify({'result': 'success', 'user_info': users_result[0]})
-# 	except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
-# 		return redirect(url_for("login", msg="로그인을 먼저 진행해주세요."))
+@app.route("/user_info", methods=["GET"])
+def user_info_get():
+	token_receive = request.cookies.get('mytoken')
+	payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+	target_email = payload['id']
+
+	db = pymysql.connect(host='localhost', user='root', db='flask_test', password='12345678', charset='utf8')
+	curs = db.cursor()
+
+	sql = """
+		SELECT *
+			FROM users u
+			WHERE u.email = %s
+		"""
+
+	curs.execute(sql, target_email)
+
+	users_result = curs.fetchall()
+	print(users_result[0])
+
+	json_str = json.dumps(users_result, indent=4, sort_keys=True, default=str)
+	db.commit()
+	db.close()
+
+	return jsonify({'msg':'GET 연결 완료!', 'user_info' : users_result[0]})
 
 @app.route('/user_only', methods=['POST'])
 def user_only():
