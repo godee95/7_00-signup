@@ -28,12 +28,28 @@
             });
         }
 
+        function move_to_mypage() {
+            $.ajax({
+                type: "POST",
+                url: "/",
+                data: {},
+                success: function (response) {
+                    if (response['result'] == 'success') {
+                        window.location.href = '/mypage'
+                    } else{
+                        alert(response['msg'])
+                    }
+
+                }
+            });
+        }
+
     </script>
 </head>
 <body>
 <a href="login"> 로그인 </a>
 <hr>
-<a href="mypage"> 마이페이지 </a>
+<a onclick="move_to_mypage()"> 마이페이지 </a>
 <hr>
 <button onclick="sign_out()">로그아웃하기</button>
 <hr>
